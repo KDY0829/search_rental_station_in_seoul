@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>서울시 공공자전거 대여소 위치 표시</title>
+    <style>
+      #map {
+        width: 100%;
+        height: 400px;
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+        border: 1px solid #ccc;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>서울시 공공자전거 대여소 위치 표시</h2>
+    <div id="map"></div>
+    <script
+      type="text/javascript"
+      src="//dapi.kakao.com/v2/maps/sdk.js?appkey=8feba0d3cd495cfa9b4987a6790e25ec&libraries=services"
+    ></script>
+    <script>
+      const serviceKey = "454541646269393733325867794553";
+      const url = `http://openapi.seoul.go.kr:8088/${serviceKey}/json/bikeList/1/1000/`;
+
+      function lodaData() {
+        fetch(url)
+          .then((res) => res.json())
+          .then((data) => {
+            console.log(data);
+            const rows = data.rentBikeStatus.row;
+            console.log(rows);
+
+            rows.forEach((item) => {
+              const lat = parseFloat(item.stationLatitude);
+              const lon = parseFloat(item.stationLongitude);
+              const name = item.stationName;
+              const cnt = parseInt(item.parkingBikeTotCnt);
+
+              const locPosition = new kakao.maps.LatLng(lat, lon);
+              const message = `
+                <div style="
+                    padding:15px 10px;
+                    white-space:normal;
+                    max-width:260px;
+                    font-size:14px;
+                    line-height:1.4;
+                    white-space:nowrap;           /* 🔥 줄바꿈 금지 */
+                    word-break:keep-all;          /* 🔥 단어 분리 금지 */
+                  ">
+                    <b>${name}</b><br>
+                    대여 가능 자전거: ${cnt}대
+                  </div>
+              `;
+
+              let imageSrc;
+              if (cnt === 0) {
+                imageSrc =
+                  "https://maps.gstatic.com/mapfiles/ms2/micons/red-dot.png";
+              } else if (cnt >= 5) {
+                imageSrc =
+                  "https://maps.gstatic.com/mapfiles/ms2/micons/green-dot.png";
+              } else {
+                imageSrc =
+                  "https://maps.gstatic.com/mapfiles/ms2/micons/blue-dot.png";
+              }
+
+              const imageSize = new kakao.maps.Size(32, 32);
+              const markerImage = new kakao.maps.MarkerImage(
+                imageSrc,
+                imageSize
+              );
+
+              displayMarker(locPosition, message, markerImage);
+            });
+          })
+          .catch((err) => {
+            console.log("fetch 실패 또는 파싱 오류", err);
+          });
+      }
+
+      let map;
+
+      window.onload = function () {
+        kakao.maps.load(function () {
+          const mapContainer = document.getElementById("map");
+          const mapOption = {
+            center: new kakao.maps.LatLng(37.499982, 127.035424),
+            level: 3,
+          };
+          map = new kakao.maps.Map(mapContainer, mapOption);
+
+          if (navigator.geolocation) {
+            // GeoLocation을 이용해서 접속 위치를 얻어옵니다
+            navigator.geolocation.getCurrentPosition(function (position) {
+              const lat = position.coords.latitude; // 위도
+              const lon = position.coords.longitude; // 경도
+
+              const locPosition = new kakao.maps.LatLng(lat, lon); // 마커가 표시될 위치를 geolocation으로 얻어온 좌표로 생성합니다
+              const message =
+                '<div style="padding:5px;">여기에 계신가요?!</div>'; // 인포윈도우에 표시될 내용입니다
+
+              // 마커와 인포윈도우를 표시합니다
+              displayMarker(locPosition, message, markerImage);
+            });
+          } else {
+            // HTML5의 GeoLocation을 사용할 수 없을때 마커 표시 위치와 인포윈도우 내용을 설정합니다
+
+            var locPosition = new kakao.maps.LatLng(33.450701, 126.570667),
+              message = "geolocation을 사용할수 없어요..";
+
+            displayMarker(locPosition, message);
+          }
+          lodaData();
+        });
+      };
+
+      function displayMarker(locPosition, message, markerImage) {
+        // 마커를 생성합니다
+        const marker = new kakao.maps.Marker({
+          map: map,
+          position: locPosition,
+          image: markerImage,
+        });
+
+        const iwContent = message, // 인포윈도우에 표시할 내용
+          iwRemoveable = true;
+
+        // 인포윈도우를 생성합니다
+        const infowindow = new kakao.maps.InfoWindow({
+          content: iwContent,
+          removable: iwRemoveable,
+        });
+
+        kakao.maps.event.addListener(marker, "click", function () {
+          // 마커 위에 인포윈도우를 표시합니다
+          infowindow.open(map, marker);
+        });
+
+        // 지도 중심좌표를 접속위치로 변경합니다
+        map.setCenter(locPosition);
+      }
+    </script>
+  </body>
+</html>
