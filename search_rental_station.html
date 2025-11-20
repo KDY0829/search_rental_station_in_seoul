@@ -5,31 +5,89 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>서울시 공공자전거 대여소 위치 표시</title>
     <style>
+      .header {
+        text-align: center;
+      }
       #map {
         width: 100%;
-        height: 400px;
+        height: 700px;
         margin-top: 2rem;
         margin-bottom: 2rem;
         border: 1px solid #ccc;
       }
+      #loadMoreBtn {
+        padding: 10px 15px;
+
+        position: absolute;
+        right: 0;
+        bottom: -50px;
+        transition: 0.2s;
+        border-radius: 8px;
+        background: #4caf50;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 15px;
+        font-weight: 600;
+        box-shadow: 0 4px 7px rgba(0, 0, 0, 0.2);
+      }
+      #loadMoreBtn:hover {
+        background: #45a049;
+        transform: translateY(-3px);
+        box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
+      }
+
+      #loadMoreBtn:active {
+        transform: translateY(0);
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+      }
     </style>
   </head>
   <body>
-    <h2>서울시 공공자전거 대여소 위치 표시</h2>
-    <div id="map"></div>
+    <h2 class="header">서울시 공공자전거 대여소 위치 표시</h2>
+    <div style="width: 100%; position: relative">
+      <div id="map"></div>
+      <!-- ✅ 추가: 더 보기 버튼 -->
+      <button id="loadMoreBtn">더 보기 (다음 1000개)</button>
+    </div>
     <script
       type="text/javascript"
       src="//dapi.kakao.com/v2/maps/sdk.js?appkey=YOUR_KAKAO_KEY&libraries=services"
     ></script>
     <script>
       const APIKey = "YOUR_SEOUL_API_KEY"; // 당신의 APIKey 입력
-      const url = `http://openapi.seoul.go.kr:8088/${APIKey}/json/bikeList/1/1000/`;
 
-      function lodaData() {
+      // ✅ 추가: 페이지 번호 & 페이지당 개수
+      let page = 1; // 현재 페이지
+      const limit = 1000; // 한 번에 불러올 개수(서울시 API 기본 1000)
+
+      function clearAllMarkers() {
+        markers.forEach((m) => m.setMap(null));
+        markers = [];
+      }
+
+      function loadData(page) {
+        const start = (page - 1) * limit + 1; // 1, 1001, 2001, ...
+        const end = page * limit; // 1000, 2000, 3000, ...
+        const url = `http://openapi.seoul.go.kr:8088/${APIKey}/json/bikeList/${start}/${end}/`;
+        console.log("요청 URL:", url);
+
         fetch(url)
           .then((res) => res.json())
           .then((data) => {
             console.log(data);
+
+            if (!data.rentBikeStatus || data.rentBikeStatus.row.length === 0) {
+              alert("더 이상 데이터가 없습니다. 처음으로 돌아갑니다.");
+
+              page = 1; // 페이지 초기화
+
+              clearAllMarkers();
+
+              loadData(page);
+              return;
+            }
+
             const rows = data.rentBikeStatus.row;
             console.log(rows);
 
@@ -81,6 +139,13 @@
           });
       }
 
+      let markers = []; // 전역 배열
+
+      function clearAllMarkers() {
+        markers.forEach((m) => m.setMap(null));
+        markers = [];
+      }
+
       let map;
 
       window.onload = function () {
@@ -113,9 +178,17 @@
 
             displayMarker(locPosition, message);
           }
-          lodaData();
+          loadData(page);
         });
       };
+
+      // ✅ 추가: "더 보기" 버튼 클릭 시 다음 페이지 데이터 로드
+      document
+        .getElementById("loadMoreBtn")
+        .addEventListener("click", function () {
+          page++; // 다음 페이지
+          loadData(page);
+        });
 
       function displayMarker(locPosition, message, markerImage) {
         // 마커를 생성합니다
@@ -125,6 +198,7 @@
           image: markerImage,
         });
 
+        markers.push(marker); // 마커 저장
         const iwContent = message, // 인포윈도우에 표시할 내용
           iwRemoveable = true;
 

@@ -74,10 +74,10 @@ const url = `http://openapi.seoul.go.kr:8088/${APIKey}/json/bikeList/1/1000/`;
 
 3. 키 입력
 
-YOUR_KAKAO_KEY → 카카오맵 JavaScript API 키
+- YOUR_KAKAO_KEY → 카카오맵 JavaScript API 키
 
-YOUR_SEOUL_API_KEY → 서울시 공공자전거 실시간 정보 API 키
+- YOUR_SEOUL_API_KEY → 서울시 공공자전거 실시간 정보 API 키
 
 4. 실행
 
-VSCode에서 Alt + L + O (Live Server 실행)
+- VSCode에서 Alt + L + O (Live Server 실행)
