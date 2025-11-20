@@ -19,11 +19,11 @@
     <div id="map"></div>
     <script
       type="text/javascript"
-      src="//dapi.kakao.com/v2/maps/sdk.js?appkey=8feba0d3cd495cfa9b4987a6790e25ec&libraries=services"
+      src="//dapi.kakao.com/v2/maps/sdk.js?appkey=YOUR_KAKAO_KEY&libraries=services"
     ></script>
     <script>
-      const serviceKey = "454541646269393733325867794553";
-      const url = `http://openapi.seoul.go.kr:8088/${serviceKey}/json/bikeList/1/1000/`;
+      const APIKey = "YOUR_SEOUL_API_KEY"; // 당신의 APIKey 입력
+      const url = `http://openapi.seoul.go.kr:8088/${APIKey}/json/bikeList/1/1000/`;
 
       function lodaData() {
         fetch(url)
